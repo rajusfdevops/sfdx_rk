@@ -1,0 +1,55 @@
+name: Deploy to Salesforce Environments on Push to Main
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'force-app/**'
+
+jobs:
+  Deploy-to-Salesforce:
+    runs-on: ubuntu-latest
+    steps:
+      # Step 1: Set up Node.js
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      # Step 2: Checkout source code
+      - name: 'Checkout source code'
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: '2'
+
+      # Step 3: Install Salesforce CLI
+      - name: 'Install Salesforce CLI'
+        run: npm install @salesforce/cli --global
+
+      # Step 4: Install sfdx-git-delta plugin
+      - name: 'Install sfdx git delta'
+        run: |
+          echo Y | sfdx plugins:install sfdx-git-delta
+          sfdx plugins
+
+      # Step 5: Create delta packages (detect changes dynamically)
+      - name: 'Create delta packages'
+        run: |
+          mkdir changed-sources
+          sf sgd source delta --to "HEAD" --from "HEAD~1" --output changed-sources/ --generate-delta --source force-app/
+          echo "[INFO] Delta package created"
+
+      # Step 6: Authenticate to Dev1 and retrieve metadata
+      - name: 'Authenticate to Dev1 and retrieve metadata'
+        run: |
+          echo "${{ secrets.JWT_SERVER_KEY }}" > server.key
+          sf org login jwt --username ${{ secrets.DEV1_USERNAME }} --jwt-key-file server.key --client-id ${{ secrets.DEV1_CLIENT_ID }} --instance-url https://test.salesforce.com --set-default
+          sf project retrieve start --source-dir changed-sources/force-app
+          echo "[INFO] Metadata retrieved from Dev1"
+
+      # Step 7: Authenticate to Test1 and deploy metadata
+      - name: 'Authenticate to Test1 and deploy metadata'
+        run: |
+          echo "${{ secrets.JWT_SERVER_KEY }}" > server.key
+          sf org login jwt --username ${{ secrets.TEST1_USERNAME }} --jwt-key-file server.key --client-id ${{ secrets.TEST1_CLIENT_ID }} --instance-url https://test.salesforce.com --set-default
+          sf project deploy start --source-dir changed-sources/force-app --test-level RunLocalTests
+          echo "[INFO] Metadata deployed to Test1"
