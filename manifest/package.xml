@@ -40,5 +40,13 @@
         <members>*</members>
         <name>CustomField</name>
     </types>
+    <types>
+    <members>rk_test__c</members>
+    <name>CustomObject</name>
+</types>
+<types>
+    <members>rk_test__c.Currency__c</members>
+    <name>CustomField</name>
+</types>
     <version>63.0</version>
 </Package>
