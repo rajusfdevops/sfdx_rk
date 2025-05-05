@@ -1,4 +1,4 @@
-name: Deploy to Salesforce Environments on Push to Main
+name: Retrieve and Deploy Metadata Using package.xml
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
       - 'force-app/**'
 
 jobs:
-  Deploy-to-Salesforce:
+  Retrieve-and-Deploy:
     runs-on: ubuntu-latest
     steps:
       # Step 1: Set up Node.js
@@ -25,34 +25,18 @@ jobs:
       - name: 'Install Salesforce CLI'
         run: npm install @salesforce/cli --global
 
-      # Step 4: Install sfdx-git-delta plugin
-      - name: 'Install sfdx git delta'
-        run: |
-          echo Y | sfdx plugins:install sfdx-git-delta
-
-      # Step 5: Authenticate to Dev1 and retrieve metadata
+      # Step 4: Authenticate to Dev1 and retrieve metadata using package.xml
       - name: Authenticate to Dev1 and retrieve metadata
         run: |
           echo "${{ secrets.JWT_SERVER_KEY }}" > server.key
           sf org login jwt --username ${{ secrets.DEV1_USERNAME }} --jwt-key-file server.key --client-id ${{ secrets.DEV1_CLIENT_ID }} --instance-url https://test.salesforce.com --set-default
-          sf project retrieve start --source-dir force-app --ignore-conflicts
+          sf project retrieve start --manifest package.xml
           echo "[INFO] Metadata retrieved from Dev1"
 
-      # Step 6: Create delta packages (detect changes dynamically)
-      - name: 'Create delta packages'
-        run: |
-          mkdir -p changed-sources
-          sf sgd source delta --to "HEAD" --from "HEAD~1" --output changed-sources/ --generate-delta --source force-app/
-          ls -R changed-sources || echo "[INFO] No changes detected."
-
-      # Step 7: Authenticate to Test1 and deploy metadata
+      # Step 5: Authenticate to Test1 and deploy metadata using package.xml
       - name: Deploy Metadata to Test1
         run: |
           echo "${{ secrets.JWT_SERVER_KEY }}" > server.key
           sf org login jwt --username ${{ secrets.TEST1_USERNAME }} --jwt-key-file server.key --client-id ${{ secrets.TEST1_CLIENT_ID }} --instance-url https://test.salesforce.com --set-default
-          if [ -d "changed-sources/force-app" ]; then
-            sf project deploy start --source-dir changed-sources/force-app --test-level RunLocalTests --ignore-conflicts
-          else
-            echo "[INFO] No changes detected. Deploying entire force-app directory."
-            sf project deploy start --source-dir force-app --test-level RunLocalTests --ignore-conflicts
-          fi
+          sf project deploy start --manifest package.xml --test-level RunLocalTests
+          echo "[INFO] Metadata deployed to Test1"
