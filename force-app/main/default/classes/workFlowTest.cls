@@ -13,5 +13,8 @@ public class workFlowTest {
         System.debug('This apex class to test github action workflow5');
          //Step 6 change
         System.debug('This apex class to test github action workflow6');
+        //Step 7 change
+        System.debug('This apex class to test github action workflow7');
+    
     }
 }

@@ -30,7 +30,7 @@ jobs:
         run: |
           echo "${{ secrets.JWT_SERVER_KEY }}" > server.key
           sf org login jwt --username ${{ secrets.DEV1_USERNAME }} --jwt-key-file server.key --client-id ${{ secrets.DEV1_CLIENT_ID }} --instance-url https://test.salesforce.com --set-default
-          sf project retrieve start --manifest package.xml
+          sf project retrieve start --manifest manifest/package.xml
           echo "[INFO] Metadata retrieved from Dev1"
 
       # Step 5: Authenticate to Test1 and deploy metadata using package.xml
@@ -38,5 +38,5 @@ jobs:
         run: |
           echo "${{ secrets.JWT_SERVER_KEY }}" > server.key
           sf org login jwt --username ${{ secrets.TEST1_USERNAME }} --jwt-key-file server.key --client-id ${{ secrets.TEST1_CLIENT_ID }} --instance-url https://test.salesforce.com --set-default
-          sf project deploy start --manifest package.xml --test-level RunLocalTests
+          sf project deploy start --manifest manifest/package.xml --test-level RunLocalTests
           echo "[INFO] Metadata deployed to Test1"
