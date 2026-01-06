@@ -18,7 +18,7 @@ public class Calculator {
          if(num2==0){
              throw new MathException('Division by zero is not allowed');
          }
-        return num1/num2;
+        return num1/num2; // this is return value of division
     }
 
 }
